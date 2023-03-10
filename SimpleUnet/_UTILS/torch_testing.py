@@ -12,12 +12,8 @@ from tqdm import tqdm
 sys.path.append("./_MODEL")
 sys.path.append("./_UTILS")
 
-from torch_dataset import AODataset, generate_paths
-from torch_unet import UNET
 from utils import live_plot
-
 from CONFIG import *
-
 
 def test_model(model, tLoad, rsltPath, dev="cuda:0") :
     """ Testing model : plotting training results + test segmentation

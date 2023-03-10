@@ -12,9 +12,9 @@ IMG_HEIGHT, IMG_WIDTH = 512, 512
 # Learning parameters
 SPLIT_RATE = 95 # Amount of images in train dataset
 BATCH_SIZE = 16 # Amount of images used in one training batch
-LEARNING_RATE = 0.001 
-EPOCHS = 20
-LOSS = "Tversky"
+LEARNING_RATE = 0.002 
+EPOCHS = 100
+LOSS = "FTLoss"
 
 # Config parameters 
 DEVICE = "cuda:0"
