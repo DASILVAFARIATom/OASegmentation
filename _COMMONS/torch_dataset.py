@@ -4,7 +4,8 @@ Created on Mon Mar  6 09:55:03 2023
 @author: tomDaSilva
 """
 
-import os, torch
+import os
+from torch import max
 import numpy as np
 
 from torch.utils.data import Dataset
@@ -57,21 +58,14 @@ class AODataset(Dataset) :
     def __len__(self) : 
         """ Returning amount of annotated images in the whole dataset """
         return len(self.files)
-    def __dim__(self):
-        x, y, path_files = self.__getitem__(0)
-        print(x.shape,y.shape)
     
     def __getitem__(self, idx) : 
         """ Returning image [idx], its GT and the patient name """
         
         filepath = self.files[idx]
         with np.load(filepath) as data : 
-            x, y = data["x"].astype(np.float32), data["y"].astype(np.float32)
+            x, y = data["x"].astype(np.float32), data["y"].astype(np.uint8)
         x, y = x.transpose((1, 2, 0)), y.transpose((1, 2, 0))
-        
         if self.transf is not None : x, y = self.transf(x), self.transf(y)
-        
-        y = (y / torch.max(y))
-        x = (x - torch.min(x))/(torch.max(x)-torch.min(x))
-       
+        y = y / max(y)
         return (x, y, self.files[idx])

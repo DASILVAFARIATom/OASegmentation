@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from IPython.display import clear_output
 
 def save_checkpoints(state, filename) :
-    print(f"[INFO] - Saving checkpoint in :\n{filename}\n")
+    print("[INFO] - Saving checkpoint")
     save(state, filename)
     
 def format_seconds_to_hhmmss(seconds):
@@ -22,9 +22,7 @@ def format_seconds_to_hhmmss(seconds):
 
 def live_plot(data_dict, image, segm, gt, size=(10,3), live=True):
     """ Sequentially updating a plot : results and segmentation """
-    
     if live : clear_output(wait=True)
-    
     fig = plt.figure(figsize=size)
     for i in range(4) : 
         ax = fig.add_subplot(1, 4, i+1)
@@ -45,16 +43,3 @@ def live_plot(data_dict, image, segm, gt, size=(10,3), live=True):
             plt.title("Prediction")
             
     plt.show()
-    
-def PadifNeeded(img, label, n_dim=512):
-    old_shape = img.shape
-    if old_shape[1] != n_dim and old_shape[2] != n_dim:
-        min_value = img.min()
-        img[img == 0] = min_value
-        Pad_coord = [int((n_dim/2) - (old_shape[2]/2)), int((n_dim/2) - (old_shape[3]/2)),old_shape[2],old_shape[3] ]
-        img[:,Pad_coord[0]:Pad_coord[0]+Pad_coord[2],Pad_coord[1]:Pad_coord[1]+Pad_coord[3]]  = img
-        label[:,Pad_coord[0]:Pad_coord[0]+Pad_coord[2],Pad_coord[1]:Pad_coord[1]+Pad_coord[3]]  = label
-    else:
-        Pad_coord = [0,0,old_shape[1],old_shape[2]]
- 
-    return img,label, Pad_coord
