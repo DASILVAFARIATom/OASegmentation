@@ -34,7 +34,8 @@ def generate_paths(path, r=80) :
     patientsValid = patients[tR:tR+tS]
     
     for f in filesList : 
-        patient = f.split('\\')[1]
+        try : patient = f.split('\\')[1]
+        except : patient = f.split('/')[5]
         if patient in patientsTrain : trainSet.append(f)
         elif patient in patientsValid : valSet.append(f)
         else : testSet.append(f)
