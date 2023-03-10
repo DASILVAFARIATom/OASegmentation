@@ -1,6 +1,6 @@
 ## **Inception Resnet Unet**
-This model is an improved U-Net architecture, based on [1], [2] and [3] :
-<img src="https://github.com/DASILVAFARIATom/OASegmentation/blob/master/Images/IncResUnet.png" width="400">  
+This model is an improved U-Net architecture, based on [1], [2] and [3] :  
+<img src="https://github.com/DASILVAFARIATom/OASegmentation/blob/master/Images/IncResUnet.png" width="600">  
 
 Training results are available in this [notebook](https://github.com/DASILVAFARIATom/OASegmentation/blob/master/IncResUnet/main_ntbk.ipynb). The used training parameters are registered in this [config](https://github.com/DASILVAFARIATom/OASegmentation/blob/master/IncResUnet/CONFIG.py) file. 
 
