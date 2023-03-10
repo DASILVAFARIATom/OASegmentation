@@ -7,7 +7,7 @@ Created on Thu Mar  9 15:55:40 2023
 import os 
 
 # Images parameters
-IMG_HEIGHT, IMG_WIDTH = 512, 512
+IMG_HEIGHT, IMG_WIDTH = 512//2, 512//2
 
 # Learning parameters
 SPLIT_RATE = 95 # Amount of images in train dataset
@@ -20,7 +20,7 @@ DEVICE = "cuda:0"
 CKP_STEP = 10
 if os.path.exists("/projet1/tdasilva/Dataset/Patients"):
     DATASET_PATH = "/projet1/tdasilva/Dataset/Patients"
-else : DATASET_PATH = "../Dataset/Patients"
+else : DATASET_PATH = "../../ML/Dataset/Patients"
 
 # Checkpoints parameters
 SAVE_PATH = "./Checkpoints/InceptionResnetV2_Tversky_epoch10_09032023_150853.pth"

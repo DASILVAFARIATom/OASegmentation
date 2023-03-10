@@ -4,7 +4,7 @@ Created on Mon Mar  6 09:55:03 2023
 @author: tomDaSilva
 """
 
-import os
+import os, torch
 import numpy as np
 
 from torch.utils.data import Dataset
@@ -68,10 +68,10 @@ class AODataset(Dataset) :
         with np.load(filepath) as data : 
             x, y = data["x"].astype(np.float32), data["y"].astype(np.float32)
         x, y = x.transpose((1, 2, 0)), y.transpose((1, 2, 0))
-        y = (y / np.max(y)).astype(np.uint8)
-        x = (x - np.min(x))/(np.max(x)-np.min(x))
         
         if self.transf is not None : x, y = self.transf(x), self.transf(y)
         
+        y = (y / torch.max(y))
+        x = (x - torch.min(x))/(torch.max(x)-torch.min(x))
        
         return (x, y, self.files[idx])
