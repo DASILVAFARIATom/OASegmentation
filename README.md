@@ -11,5 +11,5 @@ To measure these bio-markers, we need to segment the retina vessels.
 <img src="https://github.com/DASILVAFARIATom/OASegmentation/blob/master/Images/AOImages.png" width="400">
 
 ## References
-[1] K. Abbas et al. **_A simple review of small vessel disease manifestation in the brain, retina, and kidneys._**  
-[2] A. Gallo et al. **_Non-invasive evaluation of retinal vascular remodeling and hypertrophy in humans: intricate effect of ageing, blood pressure and glycaemia_**
+[1] K. Abbas et al. **_A simple review of small vessel disease manifestation in the brain, retina, and kidneys._**  (https://www.mdpi.com/2077-0383/11/19/5546)   
+[2] A. Gallo et al. **_Non-invasive evaluation of retinal vascular remodeling and hypertrophy in humans: intricate effect of ageing, blood pressure and glycaemia_** (https://pubmed.ncbi.nlm.nih.gov/32494923/)
