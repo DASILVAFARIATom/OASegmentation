@@ -13,7 +13,7 @@ IMG_HEIGHT, IMG_WIDTH = 512//2, 512//2
 SPLIT_RATE = 95 # Amount of images in train dataset
 BATCH_SIZE = 16 # Amount of images used in one training batch
 LEARNING_RATE = 0.002 
-EPOCHS = 10
+EPOCHS = 100
 FEATURES = [128, 256, 512]
 LOSS = "Tversky"
 
