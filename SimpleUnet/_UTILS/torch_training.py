@@ -12,18 +12,23 @@ from tqdm import tqdm
 import gc
 from utils import save_checkpoints, format_seconds_to_hhmmss, live_plot
 
-def train_loop(model, tLoad, vLoad, lossF, opt, nEp, tStep, sStep, dev="cuda", ckpStep=3, plot=False): 
+def train_loop(model, tLoad, vLoad, lossF, opt, sch, 
+               nEp, tStep, sStep, dev="cuda", ckpStep=3, plot=False): 
     """ Model training function 
         @parameter : model (torch model)
         @parameter : tLoad (train DataLoader)
         @parameter : vLoad (validation DataLoader)
         @parameter : lossF (loss function)
         @parameter : opt (optimizer)
+        @parameter : sch (scheduler - reducing learning rate on plateau)
         @parameter : nEp (amount of epochs for model training)
         @parameter : tStep (training step - amount of batches seen in 1 ep.)
         @parameter : sStep (validation step)
         @parameter : dev (chosen device - "cuda" = GPU)
         @parameter : ckpStep (model weights saving every <ckpStep> ep.)
+        @parameter : plot (live plotting validation results)
+        
+        Returns H (losses and metrics) and trained model
     """
     
     startTime = time.time()
@@ -57,8 +62,10 @@ def train_loop(model, tLoad, vLoad, lossF, opt, nEp, tStep, sStep, dev="cuda", c
             
             # Updating progress display
             totalTrainLoss += loss ; totalTrainDice += diceScore
-            trainLoop.set_description("Epoch [{}/{}] -- loss = {:.3f} - F1 = {:.3f}"
-                                 .format(e+1, nEp, loss, diceScore))
+            trainLoop.set_description(
+                "Epoch [{}/{}] -- loss = {:.3f} - F1 = {:.3f}"
+                .format(e+1, nEp, loss, diceScore)
+            )
         
             
         # Validation
@@ -76,9 +83,12 @@ def train_loop(model, tLoad, vLoad, lossF, opt, nEp, tStep, sStep, dev="cuda", c
                 loss, diceScore = lossF(pred, y), dice(pred, y.int())
                 
                 totalTestLoss += loss ; totalTestDice += diceScore 
-                testLoop.set_description("Validation  -- loss = {:.3f} - F1 = {:.3f}"
-                                     .format(loss, diceScore))
-                
+                testLoop.set_description(
+                    "Validation  -- loss = {:.3f} - F1 = {:.3f}"
+                    .format(loss, diceScore)
+                )
+            sch.step(totalTestLoss) # Reducing learning rate if Plateau
+            
         avgTrainLoss, avgTestLoss = totalTrainLoss/tStep, totalTestLoss/sStep
         avgTrainDice, avgTestDice = totalTrainDice/tStep, totalTestDice/sStep
         
@@ -87,7 +97,7 @@ def train_loop(model, tLoad, vLoad, lossF, opt, nEp, tStep, sStep, dev="cuda", c
         H["train_dice"].append(avgTrainDice.cpu().detach().numpy())
         H["valid_dice"].append(avgTestDice.cpu().detach().numpy())
         
-        if plot : 
+        if plot : # If plot enabled : plotting validation results
             img = pred.permute(0, 2, 3, 1)[0] 
             live_plot(H, img.cpu().detach().numpy())
         
@@ -98,11 +108,17 @@ def train_loop(model, tLoad, vLoad, lossF, opt, nEp, tStep, sStep, dev="cuda", c
         
         if((e % ckpStep == 0) or (e == nEp -1)) : 
             now = datetime.now()   
-            dt_string = now.strftime("%d%m%Y_%H%M%S")
-            checkpoint = {"state_dict": model.state_dict(), "optimizer":opt.state_dict()}
-            filename = f"Checkpoints/{model.name}_{lossF.name}_epoch{e+1}_{dt_string}.pth"
-            save_checkpoints(checkpoint, filename)
+            dtStr = now.strftime("%d%m%Y_%H%M%S")
+            checkpoint = {"state_dict": model.state_dict(), 
+                          "optimizer":opt.state_dict()
+            }
+            f = f"Checkpoints/{model.name}_{lossF.name}_epoch{e+1}_{dtStr}.pth"
+            save_checkpoints(checkpoint, f)
     
+    # End of training loop
     endTime = time.time()-startTime
-    print("[END] - Training ended after {}".format(format_seconds_to_hhmmss(endTime)))
+    print("[END] - Training ended after {}".format(
+        format_seconds_to_hhmmss(endTime))
+    )
+    
     return H, model

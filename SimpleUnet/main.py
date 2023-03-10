@@ -5,11 +5,14 @@ Created on Fri Mar  3 16:53:29 2023
 """
 
 #%% imports
-import os
+import sys
+sys.path.append("./_MODEL")
+sys.path.append("./_UTILS")
+
 import numpy as np
 from datetime import datetime
 
-from torch.optim import Adam
+from torch.optim import Adam, lr_scheduler
 from torchvision import transforms
 from torch.utils.data import DataLoader
 
@@ -18,18 +21,7 @@ from torch_dataset import AODataset, generate_paths
 from torch_unet import UNET
 from torch_training import train_loop
 
-#%% variables
-IMG_HEIGHT, IMG_WIDTH = 512, 512
-SPLIT_RATE = 95 # Amount of images in train dataset
-BATCH_SIZE = 8  # Amount of images used in one training batch
-LEARNING_RATE = 0.001
-EPOCHS = 10
-DEVICE = "cuda:0"
-CKP_STEP = 5
-if os.path.exists("/projet1/tdasilva/Dataset/Patients"):
-    DATASET_PATH = "/projet1/tdasilva/Dataset/Patients"
-else: 
-    DATASET_PATH = "../Dataset/Patients"
+from CONFIG import *
 
 #%% dataloader
 if __name__ == "__main__":
@@ -54,20 +46,21 @@ if __name__ == "__main__":
                              pin_memory=False)#, num_workers=os.cpu_count())
     
     
-    #%% model + parametre
-    # Creating model, optimizer and loss function
+    #%% model + params
     unet = UNET("simpleUnet", inCh=1, outCh=1).to(DEVICE)
     loss = Loss(name = "FTLoss")
     opt  = Adam(unet.parameters(), lr=LEARNING_RATE)
+    sch  = lr_scheduler.ReduceLROnPlateau(opt, mode='min', factor=0.5, 
+                                          patience=2, min_lr=0.0001)
     
-    #%% trainning
-    # Train steps and loss dict
+    #%% Training    
     tStep, sStep = len(trainDataset)/BATCH_SIZE, len(valDataset)/BATCH_SIZE
     if tStep > int(tStep) : tStep = int(tStep) + 1
     if sStep > int(sStep) : sStep = int(sStep) + 1
     tStep, sStep = int(tStep), int(sStep)
     
-    H, trainedUnet = train_loop(unet, trainLoader, valLoader, loss, opt,
+    # launching train loop
+    H, trainedUnet = train_loop(unet, trainLoader, valLoader, loss, opt, sch,
                                 EPOCHS, tStep, sStep, DEVICE, CKP_STEP)
     
     now = datetime.now()   
