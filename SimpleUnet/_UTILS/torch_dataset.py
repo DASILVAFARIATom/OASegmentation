@@ -7,7 +7,6 @@ Created on Mon Mar  6 09:55:03 2023
 import os
 import numpy as np
 
-from torch import max, min
 from torch.utils.data import Dataset
 
 def generate_paths(path, r=80) :
@@ -69,7 +68,7 @@ class AODataset(Dataset) :
         with np.load(filepath) as data : 
             x, y = data["x"].astype(np.float32), data["y"].astype(np.float32)
         x, y = x.transpose((1, 2, 0)), y.transpose((1, 2, 0))
-        y = (y / np.max(y)).astype(int)
+        y = (y / np.max(y)).astype(np.uint8)
         x = (x - np.min(x))/(np.max(x)-np.min(x))
         
         if self.transf is not None : x, y = self.transf(x), self.transf(y)
