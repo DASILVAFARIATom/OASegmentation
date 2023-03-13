@@ -13,7 +13,6 @@ GAMMA_F = 2
 ALPHA_T = 0.5
 BETA_T  = 0.5
 
-
 ALPHA_TF = 0.5
 BETA_TF  = 0.5
 GAMMA_TF = 1
@@ -63,7 +62,10 @@ def computeFTLoss(x, y, smooth=1, alpha=0.5, beta=0.5, gamma=1) :
                    
     return FocalTversky
 
-
+def arctan_activation(x) : 
+    """ Computing arctangent activation function """
+    pi = torch.acos(torch.zeros(1)).item()*2
+    return 1e-7 + (1 - 2*1e-7)*(0.5 + torch.arctan(x)/torch.tensor(pi))
 
 class Loss(nn.Module) : 
     
@@ -76,8 +78,8 @@ class Loss(nn.Module) :
         elif self.name=="FTLoss"    : print("Chosen loss : Focal Tversky loss")
         else : print("Chosen loss : Tversky loss")
         
-    def forward(self, inputs, targets) : 
-        inputs = torch.sigmoid(inputs)
+    def forward(self, inputs, targets) :
+        inputs = arctan_activation(inputs)
         inputs = inputs.view(-1)
         targets = targets.view(-1)
         
