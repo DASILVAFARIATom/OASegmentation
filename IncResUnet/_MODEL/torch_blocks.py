@@ -178,24 +178,22 @@ class ReductionB(nn.Module):
         outCh -= inCh
         self.branch0 = nn.Sequential(
             ConvBlock(inCh, outCh//5, kSize=1),
-            ConvBlock(outCh//5, outCh//4, kSize=3, stride=2, padding=1)
+            ConvBlock(outCh//5, outCh//3, kSize=3, stride=2, padding=1)
         )
         
         self.branch1 = nn.Sequential(
             ConvBlock(inCh, outCh//5, kSize=3, padding=1), 
-            ConvBlock(outCh//5, outCh//4, kSize=3, stride=2, padding=1)
+            ConvBlock(outCh//5, outCh//3, kSize=3, stride=2, padding=1)
         )
         
-        miss = abs((inCh//2) - 3*(outCh//4))
+        miss = abs(outCh - 3*(outCh//3))
         self.branch2 = nn.Sequential(
             ConvBlock(inCh, outCh//5, kSize=1), 
             ConvBlock(outCh//5, outCh//4, kSize=3, padding=1), 
-            ConvBlock(outCh//4, miss+outCh//4, kSize=3, stride=2, padding=1)
+            ConvBlock(outCh//4, miss+outCh//3, kSize=3, stride=2, padding=1)
         )
-        
         self.branchpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
-        self.outCh = inCh + outCh
-        
+        self.outCh = 2*(outCh//4) + (miss+outCh//4) + inCh
         
     def forward(self, x) : 
         x0 = self.branch0(x)
@@ -215,7 +213,7 @@ class InceptionResNetC(nn.Module):
             ConvBlock(inCh//8, inCh//7, kSize=(1, 3), padding=(0, 1)),
             ConvBlock(inCh//7, inCh//6, kSize=(3, 1), padding=(1, 0))
         )
-
+        
         self.branch1 = ConvBlock(inCh, inCh//8, kSize=1)
 
         self.reduction = nn.Conv2d(int((inCh//8)+(inCh//6)), int(inCh), kernel_size=1)

@@ -59,17 +59,17 @@ class InceptionResnetV2(nn.Module) :
             nn.ConvTranspose2d(features[1]*2, features[1], kernel_size=2, stride=2), 
             DoubleConvBlock(features[1], features[0], kSize=3, padding=1)))
         self.upSample.append(nn.Sequential(
-            nn.ConvTranspose2d(features[0], features[0]//2, kernel_size=2, stride=2), 
-            DoubleConvBlock(features[0]//2, features[0]//4, kSize=3, padding=1)))
+            nn.ConvTranspose2d(features[0]*2, features[0], kernel_size=2, stride=2), 
+            DoubleConvBlock(features[0], features[0]//2, kSize=3, padding=1)))
         
-        self.out = nn.Conv2d(features[0]//4, outCh, kernel_size=1)
+        self.out = nn.Conv2d(features[0]//2, outCh, kernel_size=1)
         
     def forward(self, x) :
         
         routeConnections = []
         for cpt, down in enumerate(self.downSample) :
             x = down(x)
-            if((cpt == 16) or (cpt == 22) or (cpt == 23) ) :
+            if((cpt == 5) or (cpt == 16) or (cpt == 22) or (cpt == 23) ) :
                 routeConnections.append(x)
         
         routeConnections = routeConnections[::-1]
@@ -77,7 +77,7 @@ class InceptionResnetV2(nn.Module) :
         x = self.preSample(x)
         
         for cpt, up in enumerate(self.upSample) : 
-            if(cpt <= 2) : x = cat((routeConnections[cpt], x), 1)
+            if(cpt <= 3) : x = cat((routeConnections[cpt], x), 1)
             x = up(x)
             
         return self.out(x)
