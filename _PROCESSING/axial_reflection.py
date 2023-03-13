@@ -5,10 +5,12 @@ Created on Mon Mar 13 10:04:12 2023
 """
 
 import numpy as np
-import skimage, scipy, sys, os
+import skimage, scipy, sys, os, sklearn
 
 sys.path.append("../_COMMONS")
 from tqdm import tqdm 
+
+from clahe_enhancement import compute_convolution, compute_kernel
 from utils import plot_images
 
 if os.path.exists("/projet1/tdasilva/Dataset/Patients"):
@@ -91,14 +93,13 @@ def get_axial_reflections(It1, Id, segmLen=21, N=5) :
     return It2
 
 def get_largest_connected(binaryImg, n=5) :
-    """ Returning the <n> largest connected elements on <binaryImg> 
+    """ Returns the <n> largest connected elements on <binaryImg> 
         
         @parameter binaryImg (binary image to be processed)
         @parameter n (number of connected components that need to be returned)
     """
     
     labels = skimage.measure.label(binaryImg)
-    
     out = np.zeros((n, binaryImg.shape[0], binaryImg.shape[1]))
     for i in range(n) : 
         largestCC = labels == np.argmax(np.bincount(labels.flat)[1:])+1
@@ -119,40 +120,84 @@ def compute_geodesic_mask(It2, IEs) :
     for i in range(It2.shape[0]) : 
         for j in range(It2.shape[1]) : 
             if(IEs[i, j] == 1) : sum_it2 += It2[i, j]
-    Sm = ( (1/(IEs.shape[0]*IEs.shape[1]))*sum_it2 ) 
-    print("Threshold :", Sm)
+    Sm = ( (1/(np.shape(np.where(IEs))[1]))*sum_it2 )
     
+    # Computing binary mask
+    Im = np.zeros(np.shape(It2))
+    Im[np.where(It2 >= Sm)] = 1
     
+    return np.bitwise_or(Im.astype(np.uint8), IEs.astype(np.uint8))
     
+def dilation_reconstruction(It2, Im, radius=1, nIter=10000) :
+    """ Geodesic dilation of It2 
+    
+        @parameter It2 (orientations image)
+        @parameter Im (geodesic mask)
+    """
+    
+    k = np.ones((radius*2 + 1, )*2, dtype=np.uint8)
+    print(k)
+    marker = It2
+    for _ in tqdm(range(nIter)) : 
+        expanded = skimage.morphology.dilation(marker, k)
+        expanded = np.minimum(expanded, Im)
+        
+        if (marker == expanded).all():
+            return expanded
+        
+        marker = expanded
+    return expanded
+
+def recreate_image(codebook, labels, w, h):
+    """Recreate the (compressed) image from the code book & labels"""
+    return codebook[labels].reshape(w, h, -1)
+       
 if __name__ == "__main__" :
     
-    # Loading image
-    filepath = DATASET_PATH+IMG_1
+    
+    filepath = DATASET_PATH+IMG_2
     with np.load(filepath) as data : 
         x, y = data["x"].astype(np.float32)[0], data["y"].astype(np.uint8)[0]
     
-    # 1 - Pre-Processing
-    filtered = skimage.filters.median(x, skimage.morphology.square(7))
-    closed   = skimage.morphology.closing(filtered, skimage.morphology.disk(7))
+    #%% 1 - Pre-Processing
     
-    # 2 - Enhancing bright elongated structures 
-    topHat = skimage.morphology.white_tophat(closed, skimage.morphology.disk(10))
-    meanGreys = means_greys(topHat, segmLen=15)
+    # Image smooting
+    clahe = skimage.exposure.equalize_adapthist(x, clip_limit=0.1)
+    filtered = skimage.filters.median(clahe, skimage.morphology.square(1))
+    closed   = skimage.morphology.closing(filtered, skimage.morphology.disk(1))
+    topHat   = skimage.morphology.white_tophat(closed, skimage.morphology.disk(11))
+    
+    #%% 2 - Detection of bright elongated structures 
+    meanGreys = means_greys(closed, segmLen=55)
     orientations = direction_estimation(meanGreys, thresh=0.95)
     reflexions   = get_axial_reflections(topHat, orientations, segmLen=15)
     
-    # Detection of bright elongated structures
-    low, high = 0.1, 0.2
+    low, high = 0.2, 0.6
     lowt = (topHat > low).astype(int)
     hight = (topHat > high).astype(int)
     hyst = skimage.filters.apply_hysteresis_threshold(topHat, low, high)
-    
-    connected = get_largest_connected(hyst)
-    mask = compute_geodesic_mask(reflexions, connected)
+    hyst = get_largest_connected(hyst, n=10)
     
     
-    plot_images([x, hyst, connected], 
-                ["Original", "Threshold", "Largest"], 
+    mask = compute_geodesic_mask(reflexions, hyst)
+    skeleton = dilation_reconstruction(reflexions, mask)
+    skeleton = skeleton > 0.5
+    skeleton = skimage.morphology.erosion(skeleton, skimage.morphology.square(7))
+    skeleton = get_largest_connected(skeleton, n=5)
+    
+    #%% 3 - Classification of darkest areas
+    imageSample = sklearn.utils.shuffle(clahe, random_state=0, n_samples=64)
+    kmeans = sklearn.cluster.KMeans(n_clusters=64, n_init="auto", random_state=0).fit(imageSample)
+    labels = kmeans.predict(x)
+    
+    out = recreate_image(kmeans.cluster_centers_, labels, 512, 512)
+    print(out.shape)
+    
+    # skeleton = np.bitwise_and(skeleton.astype(np.uint8), connected.astype(np.uint8))
+    plot_images([x, clahe, topHat, reflexions, hyst, skeleton, out[:, :, 0]],
+                ["image", "CLAHE", "tophat", "reflexions", "Thresh", "skeleton", "kmeans"], 
                 1, (9, 9))
+      
+    
     
     
