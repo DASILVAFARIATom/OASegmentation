@@ -10,6 +10,7 @@ import skimage, scipy, sys, os, sklearn
 sys.path.append("../_COMMONS")
 from tqdm import tqdm 
 
+from sklearn.cluster import KMeans
 from clahe_enhancement import compute_convolution, compute_kernel
 from utils import plot_images
 
@@ -148,10 +149,22 @@ def dilation_reconstruction(It2, Im, radius=1, nIter=10000) :
         marker = expanded
     return expanded
 
-def recreate_image(codebook, labels, w, h):
-    """Recreate the (compressed) image from the code book & labels"""
-    return codebook[labels].reshape(w, h, -1)
-       
+def kmeans_clustering(img, nClusters) : 
+    """ Performing image quantification with kmeans algorithm 
+    
+        @parameter img (image to be processed)
+        @parameter nClusters (amount of targeted clusters)
+    """
+    
+    X   = img.reshape((-1, 1))
+    kM  = KMeans(n_clusters=nClusters, n_init=4)
+    kM.fit(X)
+    
+    values = kM.cluster_centers_.squeeze()
+    labels = kM.labels_
+    
+    return values, labels
+    
 if __name__ == "__main__" :
     
     
@@ -186,17 +199,17 @@ if __name__ == "__main__" :
     skeleton = get_largest_connected(skeleton, n=5)
     
     #%% 3 - Classification of darkest areas
-    imageSample = sklearn.utils.shuffle(clahe, random_state=0, n_samples=64)
-    kmeans = sklearn.cluster.KMeans(n_clusters=64, n_init="auto", random_state=0).fit(imageSample)
-    labels = kmeans.predict(x)
+    values, labels = kmeans_clustering(x, nClusters=3)
+    clustered = np.choose(labels, values)
+    clustered.shape = x.shape
     
-    out = recreate_image(kmeans.cluster_centers_, labels, 512, 512)
-    print(out.shape)
+    plot_images([clustered], ["kmeans"], 1, (9, 9))
+          
     
     # skeleton = np.bitwise_and(skeleton.astype(np.uint8), connected.astype(np.uint8))
-    plot_images([x, clahe, topHat, reflexions, hyst, skeleton, out[:, :, 0]],
-                ["image", "CLAHE", "tophat", "reflexions", "Thresh", "skeleton", "kmeans"], 
-                1, (9, 9))
+    # plot_images([x, clahe, topHat, reflexions, hyst, skeleton, clustered],
+    #             ["image", "CLAHE", "tophat", "reflexions", "Thresh", "skeleton", "kmeans"], 
+    #             1, (9, 9))
       
     
     
